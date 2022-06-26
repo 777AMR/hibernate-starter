@@ -36,7 +36,17 @@ public class HibernateRunner {
 //                    .build();
 //
 //            session.delete(user);
-            User user = session.get(User.class, "ivan9@gmail.com");
+            User user1 = session.get(User.class, "ivan9@gmail.com");
+//            User user2 = session.get(User.class, "ivan9@gmail.com");
+
+//            session.evict(user1);
+//            session.clear();
+//            session.close();
+
+            user1.setLastname("Petrov2");
+            System.out.println(session.isDirty());
+            session.flush();
+
 
             session.getTransaction().commit();
         }
