@@ -1,54 +1,41 @@
 package com.example;
 
-import com.example.converter.BirthdayConverter;
-import com.example.entity.Birthday;
-import com.example.entity.Role;
 import com.example.entity.User;
+import com.example.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
+import org.hibernate.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
 
 public class HibernateRunner {
+    public static final Logger log = LoggerFactory.getLogger(HibernateRunner.class);
     public static void main(String[] args) throws SQLException {
 
-        Configuration configuration = new Configuration();
-//        configuration.setPhysicalNamingStrategy(new CamelCaseToUnderscoresNamingStrategy());
-//        configuration.addAnnotatedClass(User.class);
+        User user = User.builder()
+                .username("Ivan@gmail.com")
+                .lastname("Ivanov")
+                .firstname("Ivan")
+                .build();
 
-        configuration.addAttributeConverter(new BirthdayConverter());
-        //configuration.registerTypeOverride(new JsonBinaryType());
+        log.info("User entity is in transient state, object: {}", user);
 
-        configuration.configure();
+        try (SessionFactory sessionFactory = HibernateUtil.buildSessionFactory()) {
+            try (Session session1 = sessionFactory.openSession()) {
+                Transaction transaction = session1.beginTransaction();
+                log.trace("transaction is created,{}", transaction);
 
-        try (SessionFactory sessionFactory = configuration.buildSessionFactory();
-             Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
+                session1.saveOrUpdate(user);
+                log.trace("user: {}, session {}", user, session1);
 
-//            User user = User.builder()
-//                    .username("ivan9@gmail.com")
-//                    .firstname("Ivan")
-//                    .lastname("Ivanov")
-//                    .birthDate(new Birthday(LocalDate.of(2000, 1, 19)))
-//                    .role(Role.ADMIN)
-//                    .build();
-//
-//            session.delete(user);
-            User user1 = session.get(User.class, "ivan9@gmail.com");
-//            User user2 = session.get(User.class, "ivan9@gmail.com");
-
-//            session.evict(user1);
-//            session.clear();
-//            session.close();
-
-            user1.setLastname("Petrov2");
-            System.out.println(session.isDirty());
-            session.flush();
-
-
-            session.getTransaction().commit();
+                session1.getTransaction().commit();
+            }
+            log.trace("user: {}", user);
+        } catch (Exception exception){
+            log.error("exception", exception);
+            throw exception;
         }
     }
 }
